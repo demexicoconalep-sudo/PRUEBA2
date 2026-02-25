@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tablero CONALEP</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 20px; }
+h2 { margin-top: 0; }
+button {
+    background: #1e3a8a;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 5px 3px;
+}
+button:hover { background: #1d4ed8; }
+.guardar { background: #16a34a; }
+.guardar:hover { background: #22c55e; }
+table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
+th { background: #1e3a8a; color: white; padding: 10px; text-align: center; position: sticky; top: 0; }
+td { padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center; }
+input, select { padding: 4px; border-radius: 6px; }
+.semaforo { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.verde { background: #22c55e; }
+.amarillo { background: #facc15; }
+.rojo { background: #ef4444; }
+.fecha { font-size: 11px; display: block; margin-top: 4px; color: #e5e7eb; }
+.eliminar { background: #dc2626; margin-top: 4px; }
+.eliminar:hover { background: #ef4444; }
+</style>
+</head>
+<body>
+
+<h2>Tablero de Cumplimiento CONALEP</h2>
+
+<button onclick="agregarActividad()">➕ Agregar Actividad</button>
+<button class="guardar" onclick="guardarDatos()">💾 Guardar</button>
+<button onclick="cargarDatos()">🔄 Cargar</button>
+
+<table id="tabla">
+<thead>
+<tr id="encabezado">
+<th>Plantel</th>
+</tr>
+<tr id="fechas">
+<th></th>
+</tr>
+</thead>
+<tbody id="cuerpo">
+</tbody>
+</table>
+
+<script>
+const planteles = [
+"Almoloya del Río","Atizapán I","Atizapán II","Atlacomulco",
+"Ing. Bernardo Quintana Arrioja - Cuautitlán","Chalco","Chimalhuacán",
+"Ciudad Azteca","Coacalco","Cuautitlán I","Del Sol","Ecatepec I",
+"Ecatepec II","Ecatepec III","El Oro","El Zarco",
+"Gustavo Baz - Tlalnepantla","Huixquilucan","Ixtapaluca","Lerma",
+"Los Reyes la Paz","Naucalpan I","Naucalpan II",
+"Nezahualcóyotl I","Nezahualcóyotl II","Nezahualcóyotl III",
+"Nicolás Romero","Santiago Tianguistenco","Santiago Tilapa",
+"Tecámac","Temoaya","Texcoco","Tlalnepantla I",
+"Tlalnepantla II","Tlalnepantla III","Toluca","Tultitlán",
+"Valle de Aragón","Villa Victoria"
+];
+
+let actividades = [];
+let estados = {};
+
+function inicializarEstados() {
+    planteles.forEach((p, i) => {
+        estados[i] = {};
+        actividades.forEach((a, j) => estados[i][j] = "verde");
+    });
+}
+
+function renderTabla() {
+    const encabezado = document.getElementById("encabezado");
+    const fechas = document.getElementById("fechas");
+    const cuerpo = document.getElementById("cuerpo");
+
+    encabezado.innerHTML = "<th>Plantel</th>";
+    fechas.innerHTML = "<th></th>";
+    cuerpo.innerHTML = "";
+
+    actividades.forEach((act, j) => {
+        encabezado.innerHTML += `<th>${act.nombre}<br><button class='eliminar' onclick='eliminarActividad(${j})'>✖</button></th>`;
+        fechas.innerHTML += `<th><span class='fecha'>Solicitud: ${act.solicitud}</span><span class='fecha'>Entrega: ${act.entrega}</span></th>`;
+    });
+
+    planteles.forEach((plantel, i) => {
+        let fila = `<tr><td>${plantel}</td>`;
+        actividades.forEach((act, j) => {
+            const estado = estados[i]?.[j] || "verde";
+            fila += `
+            <td>
+                <span class="semaforo ${estado}" id="s_${i}_${j}"></span>
+                <select onchange="cambiarSemaforo(${i},${j},this.value)">
+                    <option value="verde">🟢</option>
+                    <option value="amarillo">🟡</option>
+                    <option value="rojo">🔴</option>
+                </select>
+            </td>`;
+        });
+        fila += "</tr>";
+        cuerpo.innerHTML += fila;
+    });
+}
+
+function agregarActividad() {
+    const nombre = prompt("Nombre de la actividad:");
+    if (!nombre) return;
+
+    const solicitud = prompt("Fecha de solicitud:");
+    if (!solicitud) return;
+
+    const entrega = prompt("Fecha de entrega:");
+    if (!entrega) return;
+
+    actividades.push({ nombre, solicitud, entrega });
+    inicializarEstados();
+    renderTabla();
+}
+
+function eliminarActividad(index) {
+    actividades.splice(index, 1);
+    inicializarEstados();
+    renderTabla();
+}
+
+function cambiarSemaforo(i, j, color) {
+    estados[i][j] = color;
+    document.getElementById(`s_${i}_${j}`).className = "semaforo " + color;
+}
+
+function guardarDatos() {
+    localStorage.setItem("actividades", JSON.stringify(actividades));
+    localStorage.setItem("estados", JSON.stringify(estados));
+    alert("Datos guardados correctamente ✅");
+}
+
+function cargarDatos() {
+    const act = localStorage.getItem("actividades");
+    const est = localStorage.getItem("estados");
+
+    if (act) actividades = JSON.parse(act);
+    if (est) estados = JSON.parse(est);
+
+    renderTabla();
+}
+
+// Inicialización
+actividades = [
+{ nombre: "Retroalimentación MCCEMS", solicitud: "01/02/2026", entrega: "15/02/2026" },
+{ nombre: "Planeación Didáctica", solicitud: "05/02/2026", entrega: "20/02/2026" },
+{ nombre: "Bibliotecas", solicitud: "10/02/2026", entrega: "28/02/2026" }
+];
+
+inicializarEstados();
+cargarDatos();
+</script>
+
+</body>
+</html>
